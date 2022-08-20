@@ -27,5 +27,5 @@ The box will be updated with the sum of the value of these equities on the table
 ## Install
 
 1. Install [TamperMonkey](https://www.tampermonkey.net)
-1. 
+1. [Install the script](https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js)
 
