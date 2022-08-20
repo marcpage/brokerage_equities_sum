@@ -5,6 +5,8 @@
 // @version      1.0
 // @description  Add up the value of selected equities in your brokerage account
 // @author       Marc Page
+// @updateURL    https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
+// @downloadURL  https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
 // @match        https://invest.ameritrade.com/grid/p/*
 // @grant        none
