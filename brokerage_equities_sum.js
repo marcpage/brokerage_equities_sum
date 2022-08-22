@@ -1,16 +1,18 @@
 // ==UserScript==
-// @name         Brokerage Equities Sum
+// @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @license      Open Source
-// @version      1.0
-// @description  Add up the value of selected equities in your brokerage account
+// @version      1.1
+// @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
-// @updateURL    https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
-// @downloadURL  https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
 // @match        https://invest.ameritrade.com/grid/p/*
 // @grant        none
 // ==/UserScript==
+
+/* Change log:
+    1.0 Initial release
+    1.1 support equity balances with a comma in it (like $1,000)
+*/
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
 */
@@ -29,7 +31,7 @@ function load_symbol_table_fidelity() {
         var row = data[row_index];
         var cells = row && row.getElementsByClassName ? row.getElementsByClassName("ag-cell") : undefined;
         var value_text = cells && cells.length > current_value_index ? cells[current_value_index - 1] : undefined;
-        var value = value_text ? parseFloat(value_text.innerText.replace("$","")) : undefined;
+        var value = value_text ? parseFloat(value_text.innerText.replace("$","").replace(",","")) : undefined;
 
 
         if (symbol && value) {
@@ -54,7 +56,7 @@ function load_symbol_table_ameritrade() {
         var columns = rows[row_index].getElementsByTagName("td");
         var symbol = columns[0] ? columns[0].innerText.replace(",","").replace(/\s+/, "") : undefined;
         var value_column = columns[current_value_index];
-        var value = value_column ? parseFloat(value_column.innerText) : undefined;
+        var value = value_column ? parseFloat(value_column.innerText.replace(",","")) : undefined;
 
         if (symbol && value) {
             table[symbol] = value;
