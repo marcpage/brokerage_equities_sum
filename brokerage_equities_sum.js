@@ -5,6 +5,7 @@
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
+// @match        https://digital.fidelity.com/ftgw/digital/portfolio/*
 // @match        https://invest.ameritrade.com/grid/p/*
 // @grant        none
 // ==/UserScript==
