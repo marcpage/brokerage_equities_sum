@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
@@ -13,6 +13,7 @@
 /* Change log:
     1.0 Initial release
     1.1 support equity balances with a comma in it (like $1,000)
+    1.1.1 & 1.1.2 Minor changes to HTML scraping
 */
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
@@ -21,24 +22,23 @@ function load_symbol_table_fidelity() {
     var headers = document.getElementsByClassName("ag-header")[0].getElementsByClassName("ag-header-cell");
     var current_value_index = Array.from(headers).findIndex(x => x.innerText.indexOf("Current Value") >= 0);
     var rows = document.getElementsByClassName("ag-row");
-    var symbols = Array.from(rows).filter(e => e.getElementsByClassName("ag-cell").length == 1);
     var data = Array.from(rows).filter(e => e.getElementsByClassName("ag-cell").length > 1);
     var table = {};
 
-    for (var row_index = 0; row_index < Math.min(rows.length, symbols.length); ++row_index) {
-        var symbol_cell = symbols[row_index];
-        var symbol_button = symbol_cell.getElementsByTagName("button");
-        var symbol = symbol_button.length > 0 ? symbol_button[0].innerText : undefined;
+    for (var row_index = 0; row_index < rows.length; ++row_index) {
         var row = data[row_index];
         var cells = row && row.getElementsByClassName ? row.getElementsByClassName("ag-cell") : undefined;
-        var value_text = cells && cells.length > current_value_index ? cells[current_value_index - 1] : undefined;
+        var value_text = cells && cells.length > current_value_index ? cells[current_value_index] : undefined;
         var value = value_text ? parseFloat(value_text.innerText.replace("$","").replace(",","")) : undefined;
-
+        var symbol_cell = cells ? cells[0] : undefined;
+        var symbol_div = symbol_cell ? symbol_cell.getElementsByClassName("posweb-cell-symbol-name_container") : undefined;
+        var symbol = symbol_div && symbol_div.length > 0 ? symbol_div[0].innerText.trim() : undefined;
 
         if (symbol && value) {
             table[symbol] = value;
         }
     }
+    console.log(table);
     return table;
 }
 
