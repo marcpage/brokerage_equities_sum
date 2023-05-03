@@ -32,7 +32,7 @@ function load_symbol_table_fidelity() {
         var value = value_text ? parseFloat(value_text.innerText.replace("$","").replace(",","")) : undefined;
         var symbol_cell = cells ? cells[0] : undefined;
         var symbol_div = symbol_cell ? symbol_cell.getElementsByClassName("posweb-cell-symbol-name_container") : undefined;
-        var symbol = symbol_div && symbol_div.length > 0 ? symbol_div[0].innerText.trim() : undefined;
+        var symbol = symbol_div && symbol_div.length > 0 ? symbol_div[0].innerText.replace("Has Activity Today", "").trim() : undefined;
 
         if (symbol && value) {
             table[symbol] = value;
@@ -68,6 +68,7 @@ function load_symbol_table_ameritrade() {
             console.log("value: " + value);
         }
     }
+    console.log(table);
 
     return table;
 }
