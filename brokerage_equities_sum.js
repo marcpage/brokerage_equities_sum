@@ -39,6 +39,8 @@ function load_symbol_table_fidelity() {
             var symbol_button = symbols[row_index] ? symbols[row_index].getElementsByTagName("button") : [];
 
             symbol = symbol_button.length > 0 ? symbol_button[0].innerText : undefined;
+            value_text = cells && cells.length > current_value_index ? cells[current_value_index - 1] : undefined;
+            value = value_text ? parseFloat(value_text.innerText.replace("$","").replace(",","")) : undefined;
         }
 
         if (symbol && value) {
