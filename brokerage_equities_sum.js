@@ -1,26 +1,31 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
 // @match        https://digital.fidelity.com/ftgw/digital/portfolio/*
 // @match        https://invest.ameritrade.com/grid/p/*
 // @grant        none
+// @updateURL    https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
+// @installURL   https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
+// @downloadURL  https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
+// @homepageURL  https://github.com/marcpage/brokerage_equities_sum
 // ==/UserScript==
 
 /* Change log:
     1.0 Initial release
     1.1 support equity balances with a comma in it (like $1,000)
     1.1.3 Updates for changes to websites
+    1.1.4 Updates for Fidelity
 */
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
 */
 function load_symbol_table_fidelity() {
     var headers = document.getElementsByClassName("ag-header")[0].getElementsByClassName("ag-header-cell");
-    var current_value_index = Array.from(headers).findIndex(x => x.innerText.indexOf("Current Value") >= 0);
+    var current_value_index = Array.from(headers).findIndex((x) => x.innerText.indexOf("Current Value") >= 0);
     var rows = document.getElementsByClassName("ag-row");
     var data = Array.from(rows).filter(e => e.getElementsByClassName("ag-cell").length > 1);
     var table = {};
@@ -160,14 +165,24 @@ function add_up_values_ameritrade() {
 */
 function ensure_working_space() {
     var working_space = document.getElementById("working_space");
-
+    console.log("*** ensure_working_space called");
     if (!working_space) {
-        var legend = document.getElementById("posweb-legend-main");
+        var legend = document.getElementsByClassName("with-customize");
         var action = add_up_values_fidelity;
-
+        console.log("*** creating a working space");
+        if (legend) {
+            legend = legend[0];
+        }
         if (!legend) {
+            legend = document.getElementById("posweb-legend-main");
+        }
+        if (!legend) {
+            console.log("*** Fidelity legend not found");
             legend = document.getElementsByClassName("disclaimerModule")[0];
             action = add_up_values_ameritrade
+        }
+        if (!legend) {
+            console.log("** legend not found");
         }
 
         working_space = document.createElement("textarea");
@@ -177,6 +192,7 @@ function ensure_working_space() {
         working_space.id = "working_space";
         working_space.addEventListener("blur", action);
         legend.insertBefore(working_space, legend.firstChild);
+        console.log("*** inserting working space before " + legend);
     }
 }
 
