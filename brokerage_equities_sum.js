@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.1.4
+// @version      1.1.5
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
@@ -9,7 +9,6 @@
 // @match        https://invest.ameritrade.com/grid/p/*
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
-// @installURL   https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
 // @downloadURL  https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
 // @homepageURL  https://github.com/marcpage/brokerage_equities_sum
 // ==/UserScript==
@@ -19,6 +18,7 @@
     1.1 support equity balances with a comma in it (like $1,000)
     1.1.3 Updates for changes to websites
     1.1.4 Updates for Fidelity
+    1.1.5 Staging for unit tests
 */
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
@@ -199,8 +199,16 @@ function ensure_working_space() {
 
 (function() {
     'use strict';
+    var isMonkey = true;
+    try {isMonkey = 'undefined' === typeof GM_info.script.exclude;} catch {isMonkey = false;}
 
     // check every 5 seconds to make sure the text box is still there
-    setInterval(ensure_working_space, 5000);
+    if (isMonkey) {
+        setInterval(ensure_working_space, 5000);
+    }
 
 })();
+
+module.exports = {
+    add_up_values: add_up_values,
+};
