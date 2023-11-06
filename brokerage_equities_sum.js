@@ -86,14 +86,9 @@ function load_symbol_table_ameritrade() {
     return table;
 }
 
-/* Parse the user's requested groups of equities and insert the sum of the values.
-Any line prefixed with a # will be removed.
-Lines not prefixed with a # are assumed to be a space-separated list of equity symbols.
-Each such line will be followed by a list of symbols not on the page and the total value of the other symbols.
-*/
-function add_up_values(symbol_values) {
-    var working_space = document.getElementById("working_space");
-    var lines = working_space.value.split(/[\n]/);
+
+function parse_and_add(text, symbol_values) {
+    var lines = text.split(/[\n]/);
     var output = "";
     var unseen_symbols = Object.keys(symbol_values);
 
@@ -143,7 +138,19 @@ function add_up_values(symbol_values) {
         output += "# Total value = $" + unseen_total.toFixed(2) + "\n\n";
     }
 
-    working_space.value = output;
+    return output;
+}
+
+
+/* Parse the user's requested groups of equities and insert the sum of the values.
+Any line prefixed with a # will be removed.
+Lines not prefixed with a # are assumed to be a space-separated list of equity symbols.
+Each such line will be followed by a list of symbols not on the page and the total value of the other symbols.
+*/
+function add_up_values(symbol_values) {
+    var working_space = document.getElementById("working_space");
+    
+    working_space.value = parse_and_add(working_space.value, symbol_values);
 }
 
 
@@ -210,5 +217,5 @@ function ensure_working_space() {
 })();
 
 module.exports = {
-    add_up_values: add_up_values,
+    parse_and_add: parse_and_add,
 };
