@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.1.6
+// @version      1.1.7
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
 // @match        https://digital.fidelity.com/ftgw/digital/portfolio/*
-// @match        https://invest.ameritrade.com/grid/p/*
+// @match        https://client.schwab.com/app/accounts/positions/*
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
 // @downloadURL  https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
@@ -20,6 +20,7 @@
     1.1.4 Updates for Fidelity
     1.1.5 Staging for unit tests
     1.1.6 Improved Fidelity input placement (11/5/2023)
+    1.1.7 Replaced TD Ameritrade with Schwab (11/5/2023)
 */
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
@@ -58,30 +59,25 @@ function load_symbol_table_fidelity() {
 }
 
 
-/* Scrapes the symbols and the market value of equities in the positions tab on TD Ameritrade's site.
+/* Scrapes the symbols and the market value of equities in the positions tab on Schwab's site.
 */
 
-function load_symbol_table_ameritrade() {
+function load_symbol_table_schwab() {
     var table = {};
-    var positions = document.getElementsByClassName("tdaBPTable")[1];
-    var headers = positions.getElementsByTagName("th");
-    var current_value_index = Array.from(headers).findIndex(x => x.innerHTML.indexOf("Mkt value") >= 0);
+    var positions = document.getElementById("responsiveTable");
     var rows = positions.getElementsByTagName("tr");
+    var header_names = Array.from(rows[0].getElementsByTagName("th"))
+                        .map(h => h.innerText.replace(/^\s+/, "").replace(/\s+$/, ""));
+    var symbol_rows = Array.from(rows).filter(r => r.getElementsByTagName("td").length == 12);
+    var market_value_index = Array.from(header_names).findIndex(x => x.indexOf("Market Value") >= 0) - 1;
 
-    for (var row_index = 0; row_index < rows.length; ++row_index) {
-        var columns = rows[row_index].getElementsByTagName("td");
-        var symbol = columns[0] ? columns[0].innerText.replace(",","").replace(/\s+/, "") : undefined;
-        var value_column = columns[current_value_index];
-        var value = value_column ? parseFloat(value_column.innerText.replace(",","")) : undefined;
+    for (var r = 0; r < symbol_rows.length; ++r) {
+        var symbol = symbol_rows[r].getElementsByTagName("th")[0].innerText.replace(',', '').replace(/^\s+/, "").replace(/\s+$/, "");
+        var fields = symbol_rows[r].getElementsByTagName("td");
+        var value_text = fields[market_value_index].getElementsByTagName("div")[0].childNodes[0].nodeValue;
+        var value = parseFloat(value_text.replace('$', '').replace(/^\s+/, "").replace(/\s+$/, ""));
 
-        if (symbol && value) {
-            table[symbol] = value;
-        } else {
-            console.log("columns: " + columns);
-            console.log("symbol: " + symbol);
-            console.log("value_column: " + value_column);
-            console.log("value: " + value);
-        }
+        table[symbol] = value;
     }
 
     return table;
@@ -150,7 +146,7 @@ Each such line will be followed by a list of symbols not on the page and the tot
 */
 function add_up_values(symbol_values) {
     var working_space = document.getElementById("working_space");
-    
+
     working_space.value = parse_and_add(working_space.value, symbol_values);
 }
 
@@ -162,10 +158,10 @@ function add_up_values_fidelity() {
 }
 
 
-/* Action to perform on TD Ameritrade's site when user leaves the text field.
+/* Action to perform on Schwab's site when user leaves the text field.
 */
-function add_up_values_ameritrade() {
-    add_up_values(load_symbol_table_ameritrade());
+function add_up_values_schwab() {
+    add_up_values(load_symbol_table_schwab());
 }
 
 
@@ -196,11 +192,12 @@ function ensure_working_space() {
         }
         if (!legend) {
             console.log("*** Fidelity legend not found");
-            legend = document.getElementsByClassName("disclaimerModule")[0];
-            action = add_up_values_ameritrade
+            legend = document.getElementsByClassName("sdps-grid-container")[0];
+            action = add_up_values_schwab;
         }
         if (!legend) {
             console.log("** legend not found");
+            return;
         }
 
         working_space = document.createElement("textarea");
