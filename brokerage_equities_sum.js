@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
@@ -19,6 +19,7 @@
     1.1.3 Updates for changes to websites
     1.1.4 Updates for Fidelity
     1.1.5 Staging for unit tests
+    1.1.6 Improved Fidelity input placement (11/5/2023)
 */
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
@@ -174,11 +175,21 @@ function ensure_working_space() {
     var working_space = document.getElementById("working_space");
     console.log("*** ensure_working_space called");
     if (!working_space) {
-        var legend = document.getElementsByClassName("with-customize");
+        var legend = document.getElementsByClassName("portfolio-card-container__top");
         var action = add_up_values_fidelity;
+
         console.log("*** creating a working space");
         if (legend) {
+            console.log("Found portfolio-card-container__top");
             legend = legend[0];
+        }
+        if (!legend) {
+            legend = document.getElementsByClassName("with-customize");
+
+            if (legend) {
+                console.log("Found with-customize");
+                legend = legend[0];
+            }
         }
         if (!legend) {
             legend = document.getElementById("posweb-legend-main");
