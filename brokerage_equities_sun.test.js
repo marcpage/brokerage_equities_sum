@@ -12,5 +12,5 @@ test("Test parsing empty input, one symbol", () => {
 
 test("Test parsing empty input, one symbol", () => {
     expect(code_under_test.parse_and_add("AAPL\n", {AAPL: 55.00}))
-        .toBe("\n# unseen: AAPL\n# Total value = $55.00\n\n");
+        .toBe("AAPL\n# Total value = $55.00\n\n\n");
 });
