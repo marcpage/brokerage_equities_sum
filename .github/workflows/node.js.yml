@@ -13,11 +13,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Source
+    - name: Fetch Source
       uses: actions/checkout@v3
-    - name: Install Jest
-      run: npm i jest --save-dev
-    - name: Install Jest CLI
-      run: npm i jest-cli -g
+    - name: Install Jest framework
+      run: |
+        npm i jest --save-dev
+        npm i jest-cli -g
     - name: Run Unit Tests
       run: jest
