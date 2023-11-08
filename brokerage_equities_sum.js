@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.1.7
+// @version      1.1.8
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
@@ -21,6 +21,7 @@
     1.1.5 Staging for unit tests
     1.1.6 Improved Fidelity input placement (11/5/2023)
     1.1.7 Replaced TD Ameritrade with Schwab (11/5/2023)
+    1.1.8 Constantly entering and leaving the input area now longer adds more blank lines (11/7/2023)
 */
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
@@ -92,10 +93,9 @@ function parse_and_add(text, symbol_values) {
     for (var line_index = 0; line_index < lines.length; ++line_index) {
         var line = lines[line_index];
 
-        if (line.match(/^\s*#/)) {
+        if (line.match(/^\s*#/) || line.match(/^\s*$/)) {
             continue;
         }
-
 
         output += line + "\n";
 
