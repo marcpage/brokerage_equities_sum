@@ -37,3 +37,9 @@ test("Ensure extra blank lines are not added", () => {
         {AAPL: 55.00, MSFT: 110.01, VTI: 12.34, VYM: 43.21}))
         .toBe("AAPL MSFT\n# Total value = $165.01\n\nVTI VYM\n# Total value = $55.55\n\n");
 });
+
+
+test("Test basic money parsing", () => {
+    expect(code_under_test.parse_money(" $5,000.34 "))
+        .toBe(5000.34);
+});

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.1.9
+// @version      1.2.0
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
@@ -23,7 +23,16 @@
     1.1.7 Replaced TD Ameritrade with Schwab (11/5/2023)
     1.1.8 Constantly entering and leaving the input area now longer adds more blank lines (11/7/2023)
     1.1.9 Remove "Account Total" as a symbol from Fidelity (11/7/2023)
+    1.2.0 Refactored code to be more unit-testable
 */
+
+
+/* parses money text into a float
+*/
+function parse_money(money_text) {
+    return parseFloat(money_text.replace('$', '').replace(",","").replace(/^\s+/, "").replace(/\s+$/, ""))
+}
+
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
 */
@@ -39,7 +48,7 @@ function load_symbol_table_fidelity() {
         var row = data[row_index];
         var cells = row && row.getElementsByClassName ? row.getElementsByClassName("ag-cell") : undefined;
         var value_text = cells && cells.length > current_value_index ? cells[current_value_index] : undefined;
-        var value = value_text ? parseFloat(value_text.innerText.replace("$","").replace(",","")) : undefined;
+        var value = value_text ? parse_money(value_text.innerText) : undefined;
         var symbol_cell = cells ? cells[0] : undefined;
         var symbol_div = symbol_cell ? symbol_cell.getElementsByClassName("posweb-cell-symbol-name_container") : undefined;
         var symbol = symbol_div && symbol_div.length > 0 ? symbol_div[0].innerText.replace("Has Activity Today", "").replace("Not Priced Today", "").trim() : undefined;
@@ -49,21 +58,20 @@ function load_symbol_table_fidelity() {
 
             symbol = symbol_button.length > 0 ? symbol_button[0].innerText : undefined;
             value_text = cells && cells.length > current_value_index ? cells[current_value_index - 1] : undefined;
-            value = value_text ? parseFloat(value_text.innerText.replace("$","").replace(",","")) : undefined;
+            value = value_text ? parse_money(value_text.innerText) : undefined;
         }
 
         if (symbol && value && !symbol.match(/Account Total/)) {
             table[symbol] = value;
         }
     }
-    console.log(table);
+
     return table;
 }
 
 
 /* Scrapes the symbols and the market value of equities in the positions tab on Schwab's site.
 */
-
 function load_symbol_table_schwab() {
     var table = {};
     var positions = document.getElementById("responsiveTable");
@@ -77,7 +85,7 @@ function load_symbol_table_schwab() {
         var symbol = symbol_rows[r].getElementsByTagName("th")[0].innerText.replace(',', '').replace(/^\s+/, "").replace(/\s+$/, "");
         var fields = symbol_rows[r].getElementsByTagName("td");
         var value_text = fields[market_value_index].getElementsByTagName("div")[0].childNodes[0].nodeValue;
-        var value = parseFloat(value_text.replace('$', '').replace(/^\s+/, "").replace(/\s+$/, ""));
+        var value = parse_money(value_text);
 
         table[symbol] = value;
     }
@@ -86,6 +94,8 @@ function load_symbol_table_schwab() {
 }
 
 
+/* parses the user input and generates report
+*/
 function parse_and_add(text, symbol_values) {
     var lines = text.split(/[\n]/);
     var output = "";
@@ -227,4 +237,5 @@ function ensure_working_space() {
 
 module.exports = {
     parse_and_add: parse_and_add,
+    parse_money: parse_money,
 };
