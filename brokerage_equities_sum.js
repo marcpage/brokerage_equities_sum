@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.2.0
+// @version      1.3.0
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
 // @match        https://digital.fidelity.com/ftgw/digital/portfolio/*
-// @match        https://client.schwab.com/app/accounts/positions/*
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
 // @downloadURL  https://raw.githubusercontent.com/marcpage/brokerage_equities_sum/main/brokerage_equities_sum.js
@@ -24,6 +23,7 @@
     1.1.8 Constantly entering and leaving the input area now longer adds more blank lines (11/7/2023)
     1.1.9 Remove "Account Total" as a symbol from Fidelity (11/7/2023)
     1.2.0 Refactored code to be more unit-testable
+    1.3.0 Removed Schwab as it was broken and show high and low for single-symbols
 */
 
 
@@ -33,12 +33,21 @@ function parse_money(money_text) {
     return parseFloat(money_text.replace('$', '').replace(",","").replace(/^\s+/, "").replace(/\s+$/, ""))
 }
 
+/* parses out the low and high from a range
+      "Low\n$67.99\nHigh\n$75.37\n"
+*/
+function parse_range(range_text) {
+    var parts = /Low\s+(\$[0-9.,]+)\s+High\s+(\$[0-9.,]+)\s+/.exec(range_text);
+    return parts ? [parse_money(parts[1]),parse_money(parts[2])] : [undefined, undefined];
+}
+
 
 /* Scrapes the symbols and the value of current value of equities in the positions tab on Fidelity's site.
 */
 function load_symbol_table_fidelity() {
     var headers = document.getElementsByClassName("ag-header")[0].getElementsByClassName("ag-header-cell");
     var current_value_index = Array.from(headers).findIndex((x) => x.innerText.indexOf("Current Value") >= 0);
+    var range_value_index = Array.from(headers).findIndex((x) => x.innerText.indexOf("52-Week Range") >= 0);
     var rows = document.getElementsByClassName("ag-row");
     var data = Array.from(rows).filter(e => e.getElementsByClassName("ag-cell").length > 1);
     var table = {};
@@ -48,6 +57,8 @@ function load_symbol_table_fidelity() {
         var row = data[row_index];
         var cells = row && row.getElementsByClassName ? row.getElementsByClassName("ag-cell") : undefined;
         var value_text = cells && cells.length > current_value_index ? cells[current_value_index] : undefined;
+        var range_text = cells && cells.length > range_value_index ? cells[range_value_index] : undefined;
+        var low_high_value = range_text ? parse_range(range_text.innerText) : undefined;
         var value = value_text ? parse_money(value_text.innerText) : undefined;
         var symbol_cell = cells ? cells[0] : undefined;
         var symbol_div = symbol_cell ? symbol_cell.getElementsByClassName("posweb-cell-symbol-name_container") : undefined;
@@ -62,32 +73,8 @@ function load_symbol_table_fidelity() {
         }
 
         if (symbol && value && !symbol.match(/Account Total/)) {
-            table[symbol] = value;
+            table[symbol] = [value, low_high_value[0], low_high_value[1]];
         }
-    }
-
-    return table;
-}
-
-
-/* Scrapes the symbols and the market value of equities in the positions tab on Schwab's site.
-*/
-function load_symbol_table_schwab() {
-    var table = {};
-    var positions = document.getElementById("responsiveTable");
-    var rows = positions.getElementsByTagName("tr");
-    var header_names = Array.from(rows[0].getElementsByTagName("th"))
-                        .map(h => h.innerText.replace(/^\s+/, "").replace(/\s+$/, ""));
-    var symbol_rows = Array.from(rows).filter(r => r.getElementsByTagName("td").length == 12);
-    var market_value_index = Array.from(header_names).findIndex(x => x.indexOf("Market Value") >= 0) - 1;
-
-    for (var r = 0; r < symbol_rows.length; ++r) {
-        var symbol = symbol_rows[r].getElementsByTagName("th")[0].innerText.replace(',', '').replace(/^\s+/, "").replace(/\s+$/, "");
-        var fields = symbol_rows[r].getElementsByTagName("td");
-        var value_text = fields[market_value_index].getElementsByTagName("div")[0].childNodes[0].nodeValue;
-        var value = parse_money(value_text);
-
-        table[symbol] = value;
     }
 
     return table;
@@ -110,26 +97,33 @@ function parse_and_add(text, symbol_values) {
 
         output += line + "\n";
 
-        if (line.match(/^\s*$/)) {
-            continue;
-        }
-
         var symbols = line.split(/\s+/);
         var total = 0.0;
+        var low = undefined;
+        var high = undefined;
+        var single_symbol = undefined;
 
         for (var symbol_index = 0; symbol_index < symbols.length; ++symbol_index) {
             let symbol = symbols[symbol_index];
 
+            single_symbol = symbol;
+
             if (!symbol_values[symbol]) {
                 output += "# Symbol " + symbol + " was not found\n";
             } else {
-                total += symbol_values[symbol];
+                total += symbol_values[symbol][0];
+                low = symbol_values[symbol][1];
+                high = symbol_values[symbol][2];
                 unseen_symbols = unseen_symbols.filter(e => e != symbol);
             }
         }
 
         if (total > 0.0) {
-            output += "# Total value = $" + total.toFixed(2) + "\n\n";
+            if (symbols.length == 1) {
+                output += "# " + single_symbol + "\t" + low + "\t" + total + "\t" + high + "\n\n";
+            } else {
+                output += "# Total value = $" + total.toFixed(2) + "\n\n";
+            }
         }
 
     }
@@ -140,7 +134,7 @@ function parse_and_add(text, symbol_values) {
         output += "# unseen: " + unseen_symbols.join(", ") + "\n";
 
         for (var unseen_symbol_index = 0; unseen_symbol_index < unseen_symbols.length; ++unseen_symbol_index) {
-            unseen_total += symbol_values[unseen_symbols[unseen_symbol_index]];
+            unseen_total += symbol_values[unseen_symbols[unseen_symbol_index]][0];
         }
 
         output += "# Total value = $" + unseen_total.toFixed(2) + "\n\n";
@@ -166,13 +160,6 @@ function add_up_values(symbol_values) {
 */
 function add_up_values_fidelity() {
     add_up_values(load_symbol_table_fidelity());
-}
-
-
-/* Action to perform on Schwab's site when user leaves the text field.
-*/
-function add_up_values_schwab() {
-    add_up_values(load_symbol_table_schwab());
 }
 
 
@@ -202,17 +189,12 @@ function ensure_working_space() {
             legend = document.getElementById("posweb-legend-main");
         }
         if (!legend) {
-            console.log("*** Fidelity legend not found");
-            legend = document.getElementsByClassName("sdps-grid-container")[0];
-            action = add_up_values_schwab;
-        }
-        if (!legend) {
             console.log("** legend not found");
             return;
         }
 
         working_space = document.createElement("textarea");
-        working_space.setAttribute("rows", 30);
+        working_space.setAttribute("rows", 15);
         working_space.setAttribute("cols", 120);
         working_space.setAttribute("placeholder", "enter list of stocks (space separated), grouped on lines");
         working_space.id = "working_space";
@@ -227,6 +209,7 @@ function ensure_working_space() {
     'use strict';
     var isMonkey = true;
     try {isMonkey = 'undefined' === typeof GM_info.script.exclude;} catch {isMonkey = false;}
+    console.log("isMonkey = " + isMonkey);
 
     // check every 5 seconds to make sure the text box is still there
     if (isMonkey) {
