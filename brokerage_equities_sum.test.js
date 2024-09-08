@@ -12,7 +12,7 @@ test("Test parsing empty input, one symbol", () => {
 
 test("Test parsing one input, one symbol", () => {
     expect(code_under_test.parse_and_add("AAPL\n", {AAPL: [55.00,50.00,60.00]}))
-        .toBe("AAPL\n# AAPL\n# AAPL\t50\t55\t60\n\n");
+        .toBe("AAPL\n# AAPL\t50\t55\t60\n\n");
 });
 
 test("Test parsing two inputs, one symbol", () => {
