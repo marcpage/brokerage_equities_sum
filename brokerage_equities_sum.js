@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
@@ -24,6 +24,7 @@
     1.1.9 Remove "Account Total" as a symbol from Fidelity (11/7/2023)
     1.2.0 Refactored code to be more unit-testable
     1.3.0 Removed Schwab as it was broken and show high and low for single-symbols
+    1.3.1 Remove high and low for single-symbols
 */
 
 
@@ -73,7 +74,7 @@ function load_symbol_table_fidelity() {
         }
 
         if (symbol && value && !symbol.match(/Account Total/)) {
-            table[symbol] = [value, low_high_value[0], low_high_value[1]];
+            table[symbol] = [value, low_high_value ? low_high_value[0] : 0, low_high_value ? low_high_value[1] : 0];
         }
     }
 
@@ -87,6 +88,7 @@ function parse_and_add(text, symbol_values) {
     var lines = text.split(/[\n]/);
     var output = "";
     var unseen_symbols = Object.keys(symbol_values);
+    console.log("*** parse_and_add");
 
     for (var line_index = 0; line_index < lines.length; ++line_index) {
         var line = lines[line_index];
@@ -119,7 +121,7 @@ function parse_and_add(text, symbol_values) {
         }
 
         if (total > 0.0) {
-            if (symbols.length == 1) {
+            if (symbols.length == 1 && false) {
                 output += "# " + single_symbol + "\t" + low + "\t" + total + "\t" + high + "\n\n";
             } else {
                 output += "# Total value = $" + total.toFixed(2) + "\n\n";
@@ -159,6 +161,7 @@ function add_up_values(symbol_values) {
 /* Action to perform on Fidelity's site when user leaves the text field.
 */
 function add_up_values_fidelity() {
+    console.log("*** add_up_values_fidelity");
     add_up_values(load_symbol_table_fidelity());
 }
 
@@ -170,7 +173,7 @@ function ensure_working_space() {
     console.log("*** ensure_working_space called");
     if (!working_space) {
         var legend = document.getElementsByClassName("portfolio-card-container__top");
-        var action = add_up_values_fidelity;
+        var button = document.createElement("button");
 
         console.log("*** creating a working space");
         if (legend) {
@@ -198,8 +201,10 @@ function ensure_working_space() {
         working_space.setAttribute("cols", 120);
         working_space.setAttribute("placeholder", "enter list of stocks (space separated), grouped on lines");
         working_space.id = "working_space";
-        working_space.addEventListener("blur", action);
+        button.innerHTML = "Calculate";
+        button.addEventListener("click", add_up_values_fidelity);
         legend.insertBefore(working_space, legend.firstChild);
+        legend.insertBefore(button, legend.firstChild);
         console.log("*** inserting working space before " + legend);
     }
 }
