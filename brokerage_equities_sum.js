@@ -25,6 +25,7 @@
     1.2.0 Refactored code to be more unit-testable
     1.3.0 Removed Schwab as it was broken and show high and low for single-symbols
     1.3.1 Remove high and low for single-symbols
+    1.3.2 Fix for Fidelity changes
 */
 
 
@@ -74,6 +75,7 @@ function load_symbol_table_fidelity() {
         }
 
         if (symbol && value && !symbol.match(/Account Total/)) {
+            symbol = symbol.match(/^\S+/)[0];
             table[symbol] = [value, low_high_value ? low_high_value[0] : 0, low_high_value ? low_high_value[1] : 0];
         }
     }
