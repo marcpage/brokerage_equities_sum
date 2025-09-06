@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Categorize Stocks
 // @namespace    https://ResolveToExcel.com/
-// @version      1.3.2
+// @version      1.3.3
 // @description  Group and summarize stocks by category in your brokerage account
 // @author       Marc Page
 // @match        https://oltx.fidelity.com/ftgw/fbc/*
@@ -26,6 +26,7 @@
     1.3.0 Removed Schwab as it was broken and show high and low for single-symbols
     1.3.1 Remove high and low for single-symbols
     1.3.2 Fix for Fidelity changes
+    1.3.3 Fix for case-insensitivity in column headers to adjust for case change
 */
 
 
@@ -48,8 +49,8 @@ function parse_range(range_text) {
 */
 function load_symbol_table_fidelity() {
     var headers = document.getElementsByClassName("ag-header")[0].getElementsByClassName("ag-header-cell");
-    var current_value_index = Array.from(headers).findIndex((x) => x.innerText.indexOf("Current Value") >= 0);
-    var range_value_index = Array.from(headers).findIndex((x) => x.innerText.indexOf("52-Week Range") >= 0);
+    var current_value_index = Array.from(headers).findIndex((x) => x.innerText.toLowerCase().indexOf("current value") >= 0);
+    var range_value_index = Array.from(headers).findIndex((x) => x.innerText.toLowerCase().indexOf("52-week range") >= 0);
     var rows = document.getElementsByClassName("ag-row");
     var data = Array.from(rows).filter(e => e.getElementsByClassName("ag-cell").length > 1);
     var table = {};
